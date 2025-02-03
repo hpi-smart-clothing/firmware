@@ -5,15 +5,12 @@
 #include <Adafruit_BNO055.h>
 
 #define BNO055_SAMPLERATE_DELAY_MS (100)
-#define BNO055_I2C_ADDR 0x29 // Sicherstellen, dass ADR mit VCC verbunden ist
-#define TCAADDR 0x70         // Adresse des Multiplexers
+#define BNO055_I2C_ADDR 0x29 
+#define TCAADDR 0x70  
 
-Adafruit_BNO055 bno055_1 = Adafruit_BNO055(55, BNO055_I2C_ADDR);
-Adafruit_BNO055 bno055_2 = Adafruit_BNO055(54, BNO055_I2C_ADDR);
-//Adafruit_BNO055 bno055_2 = Adafruit_BNO055(55);
-// Fügen Sie weitere Objekte für Ihre Sensoren hinzu.
-const int IMU_PORTS[] = {2, 0};
-const Adafruit_BNO055 IMUS[] = {bno055_2, bno055_1};
+const int IMU_PORTS[] = {0, 2}; //INSERT PORTS HERE
+const int SIZE = sizeof(IMU_PORTS)/sizeof(*IMU_PORTS);
+Adafruit_BNO055 IMUS[SIZE]; 
 
 void tcaSelect(uint8_t i) {
   if (i > 7)
@@ -24,21 +21,16 @@ void tcaSelect(uint8_t i) {
 }
 
 void setup() {
-  // put your setup code here, to run once:
   Wire.begin();
   Serial.begin(115200);
 
-  // Sensor 1 initialisieren
-  tcaSelect(0);
-  if (!bno055_1.begin())
-  {
-    Serial.println("Sensor 0 nicht gefunden!");
-  }
-
-  tcaSelect(2);
-  if (!bno055_1.begin())
-  {
-    Serial.println("Sensor 2 nicht gefunden!");
+  for (int i = 0; i < SIZE; i++){
+    tcaSelect(IMU_PORTS[i]);
+    Adafruit_BNO055 bno055 = Adafruit_BNO055(55 - i, BNO055_I2C_ADDR);
+    IMUS[i] = bno055;
+    if (!IMUS[i].begin()) {
+      Serial.println("Sensor nicht gefunden!");
+    }
   }
 }
 
@@ -53,12 +45,9 @@ void printValues(imu::Quaternion quat){
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-
-  for (int i = 0; i < sizeof(IMU_PORTS)/sizeof(*IMU_PORTS); i++){
+  for (int i = 0; i < SIZE; i++){
     tcaSelect(IMU_PORTS[i]);
-    Adafruit_BNO055 imu = IMUS[i];
-    imu::Quaternion quat = imu.getQuat();
+    imu::Quaternion quat = IMUS[i].getQuat();
     printValues(quat);
   }
 
