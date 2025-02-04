@@ -81,6 +81,8 @@ while True:
                 quaternions.append([float(splitPacket[j]) for j in range(i*4, (i+1)*4)])
 
         for i, q in enumerate(quaternions):
+                
+                #Ausrichtung der BNOs berechnen
                 roll = -math.atan2(2 * (q[0] * q[1] + q[2] * q[3]), 1 - 2 * (q[1] * q[1] + q[2] * q[2]))
                 pitch = math.asin(2 * (q[0] * q[2] - q[3] * q[1]))
                 yaw = -math.atan2(2 * (q[0] * q[3] + q[1] * q[2]), 1 - 2 * (q[2] * q[2] + q[3] * q[3])) - np.pi / 2
@@ -92,7 +94,7 @@ while True:
                 v = cross(s, k)
                 vrot = v * cos(roll) + cross(k, v) * sin(roll)
                 
-                # Update the orientation of the BNOs and arrows
+                # Ausrichtung der BNOs anpassen
                 BNOs[i].axis = k
                 BNOs[i].up = vrot
                 arrows[i][0].axis = k
