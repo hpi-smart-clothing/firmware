@@ -12,13 +12,8 @@ const int IMU_PORTS[] = {0, 2}; //INSERT PORTS HERE
 const int SIZE = sizeof(IMU_PORTS)/sizeof(*IMU_PORTS);
 Adafruit_BNO055 IMUS[SIZE]; 
 
-void tcaSelect(uint8_t i) {
-  if (i > 7)
-    return;
-  Wire.beginTransmission(TCAADDR);
-  Wire.write(1 << i);
-  Wire.endTransmission();
-}
+void printValues(imu::Quaternion quat);
+void tcaSelect(uint8_t i);
 
 void setup() {
   Wire.begin();
@@ -34,6 +29,18 @@ void setup() {
   }
 }
 
+void loop() {
+  for (int i = 0; i < SIZE; i++){
+    tcaSelect(IMU_PORTS[i]);
+    imu::Quaternion quat = IMUS[i].getQuat();
+    if(i != 0)
+      Serial.print(",");
+    printValues(quat);
+  }
+  Serial.println();
+  delay(BNO055_SAMPLERATE_DELAY_MS);
+}
+
 void printValues(imu::Quaternion quat){
   Serial.print(quat.w());
   Serial.print(",");
@@ -41,15 +48,13 @@ void printValues(imu::Quaternion quat){
   Serial.print(",");
   Serial.print(quat.y());
   Serial.print(",");
-  Serial.println(quat.z());
+  Serial.print(quat.z());
 }
 
-void loop() {
-  for (int i = 0; i < SIZE; i++){
-    tcaSelect(IMU_PORTS[i]);
-    imu::Quaternion quat = IMUS[i].getQuat();
-    printValues(quat);
-  }
-
-  delay(BNO055_SAMPLERATE_DELAY_MS);
+void tcaSelect(uint8_t i) {
+  if (i > 7)
+    return;
+  Wire.beginTransmission(TCAADDR);
+  Wire.write(1 << i);
+  Wire.endTransmission();
 }
