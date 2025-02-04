@@ -3,11 +3,27 @@ from time import sleep
 import numpy as np
 import math
 import serial
+import serial.tools.list_ports
 
-serial_com = 'COM7'
+def find_device_port():
+    ports = serial.tools.list_ports.comports()
+    print("Available COM ports:")
+    for port in ports:
+        print(f"Port: {port.device}, Description: {port.description}")
+    for port in ports:
+        if 'Arduino' in port.description or 'ESP32' in port.description or 'USB Serial Port' in port.description:
+            return port.device
+    return None
+
+serial_com = find_device_port()
+
+if serial_com is None:
+    raise Exception("No Arduino or ESP32 device found")
+
+print(f"Using COM port: {serial_com}")
 
 # Serial-Port öffnen
-ad = serial.Serial(serial_com, 9600, timeout=1)
+ad = serial.Serial(serial_com, 115200, timeout=1)
 sleep(1)
 
 if ad.isOpen():
@@ -24,25 +40,32 @@ toRad = 2 * np.pi / 360
 scene.forward = vector(-1, -1, -1)
 scene.width = 1200
 scene.height = 1080
-pos1 = vector(3, 4, 0)
-pos2 = vector(-3, 4, 0)
-
-# Pfeile und Objekte erstellen
 xarrow = arrow(length=2, shaftwidth=.1, color=color.red, axis=vector(1, 0, 0))
 yarrow = arrow(length=2, shaftwidth=.1, color=color.green, axis=vector(0, 1, 0))
 zarrow = arrow(length=4, shaftwidth=.1, color=color.blue, axis=vector(0, 0, 1))
 
-frontArrow1 = arrow(length=1, shaftwidth=.1, color=color.purple, axis=vector(1, 0, 0), pos = pos1)
-upArrow1 = arrow(length=1, shaftwidth=.1, color=color.magenta, axis=vector(0, 1, 0), pos = pos1)
-sideArrow1 = arrow(length=1, shaftwidth=.1, color=color.orange, axis=vector(0, 0, 1), pos = pos1)
+#Positionen der BNOs festlegen
+positions = [
+    vector(3, 4, 0),
+    vector(-3, 4, 0),
+    vector(0, 6, 0),
+    vector(2, -2, 0),
+    vector(-2, -2, 0)
+]
 
-frontArrow2 = arrow(length=1, shaftwidth=.1, color=color.purple, axis=vector(1, 0, 0), pos = pos2)
-upArrow2 = arrow(length=1, shaftwidth=.1, color=color.magenta, axis=vector(0, 1, 0), pos = pos2)
-sideArrow2 = arrow(length=1, shaftwidth=.1, color=color.orange, axis=vector(0, 0, 1), pos = pos2)
+BNOs = []
+arrows = []
 
-bno1 = box(length=2, width=1, height=.1, opacity=.8, pos = pos1)
-bno2 = box(length=2, width=1, height=.1, opacity=.8, pos = pos2)
+#BNOs und Pfeile erstellen
+for i in range(len(positions)):
+    frontArrow = arrow(length=1, shaftwidth=.1, color=color.purple, axis=vector(1, 0, 0), pos=positions[i])
+    upArrow = arrow(length=1, shaftwidth=.1, color=color.magenta, axis=vector(0, 1, 0), pos=positions[i])
+    sideArrow = arrow(length=1, shaftwidth=.1, color=color.orange, axis=vector(0, 0, 1), pos=positions[i])
+    arrows.append([frontArrow, upArrow, sideArrow])
+    bno = box(length=2, width=1, height=.1, opacity=.8, pos=positions[i])
+    BNOs.append(bno)
 
+#Ausrichtung der BNOs lesen und anpassen
 while True:
     try:
         while ad.inWaiting() == 0:
@@ -50,56 +73,35 @@ while True:
         dataPacket = ad.readline()
         dataPacket = str(dataPacket, 'utf-8').strip()
         splitPacket = dataPacket.split(",")
-        q10 = float(splitPacket[0])
-        q11 = float(splitPacket[1])
-        q12 = float(splitPacket[2])
-        q13 = float(splitPacket[3])
-        q20 = float(splitPacket[4])
-        q21 = float(splitPacket[5])
-        q22 = float(splitPacket[6])
-        q23 = float(splitPacket[7])
 
-        
-        roll1 = -math.atan2(2 * (q10 * q11 + q12 * q13), 1 - 2 * (q11 * q11 + q12 * q12))
-        pitch1 = math.asin(2 * (q10 * q12 - q13 * q11))
-        yaw1 = -math.atan2(2 * (q10 * q13 + q11 * q12), 1 - 2 * (q12 * q12 + q13 * q13)) - np.pi / 2
+        # Annahme: Datenpaket enthält 20 Werte (fünf 4er-Pakete)
+        if len(splitPacket) == 20:
+            quaternions = []
+            for i in range(5):
+                quaternions.append([float(splitPacket[j]) for j in range(i*4, (i+1)*4)])
 
-        rate(50)
-        k1 = vector(cos(yaw1) * cos(pitch1), sin(pitch1), sin(yaw1) * cos(pitch1))
-        y1 = vector(0, 1, 0)
-        s1 = cross(k1, y1)
-        v1 = cross(s1, k1)
-        vrot1 = v1 * cos(roll1) + cross(k1, v1) * sin(roll1)
-        
-        roll2 = -math.atan2(2 * (q20 * q21 + q22 * q23), 1 - 2 * (q21 * q21 + q22 * q22))
-        pitch2 = math.asin(2 * (q20 * q22 - q23 * q21))
-        yaw2 = -math.atan2(2 * (q20 * q23 + q21 * q22), 1 - 2 * (q22 * q22 + q23 * q23)) - np.pi / 2
+        for i, q in enumerate(quaternions):
+                roll = -math.atan2(2 * (q[0] * q[1] + q[2] * q[3]), 1 - 2 * (q[1] * q[1] + q[2] * q[2]))
+                pitch = math.asin(2 * (q[0] * q[2] - q[3] * q[1]))
+                yaw = -math.atan2(2 * (q[0] * q[3] + q[1] * q[2]), 1 - 2 * (q[2] * q[2] + q[3] * q[3])) - np.pi / 2
 
-        rate(50)
-        k2 = vector(cos(yaw2) * cos(pitch2), sin(pitch2), sin(yaw2) * cos(pitch2))
-        y2 = vector(0, 1, 0)
-        s2 = cross(k2, y2)
-        v2 = cross(s2, k2)
-        vrot2 = v2 * cos(roll2) + cross(k2, v2) * sin(roll2)
+                rate(50)
+                k = vector(cos(yaw) * cos(pitch), sin(pitch), sin(yaw) * cos(pitch))
+                y = vector(0, 1, 0)
+                s = cross(k, y)
+                v = cross(s, k)
+                vrot = v * cos(roll) + cross(k, v) * sin(roll)
+                
+                # Update the orientation of the BNOs and arrows
+                BNOs[i].axis = k
+                BNOs[i].up = vrot
+                arrows[i][0].axis = k
+                arrows[i][1].axis = vrot
+                arrows[i][2].axis = cross(k,vrot)
+                arrows[i][0].length = 1
+                arrows[i][1].length = 1
+                arrows[i][2].length = 1
 
-        frontArrow1.axis = k1
-        sideArrow1.axis = cross(k1, vrot1)
-        upArrow1.axis = vrot1
-        bno1.axis = k1
-        bno1.up = vrot1
-        sideArrow1.length = 2
-        frontArrow1.length = 4
-        upArrow1.length = 1
-        
-        frontArrow2.axis = k2
-        sideArrow2.axis = cross(k2, vrot2)
-        upArrow2.axis = vrot2
-        bno2.axis = k2
-        bno2.up = vrot2
-        sideArrow2.length = 2
-        frontArrow2.length = 4
-        upArrow2.length = 1
-        
     except Exception as e:
-        print(f"Fehler: {e}")
-        pass
+        print(e)
+        break
