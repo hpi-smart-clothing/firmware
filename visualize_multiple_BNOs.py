@@ -11,7 +11,7 @@ def find_device_port():
     for port in ports:
         print(f"Port: {port.device}, Description: {port.description}")
     for port in ports:
-        if 'Arduino' in port.description or 'ESP32' in port.description or 'USB Serial Port' in port.description:
+        if 'Arduino' in port.description or 'Serielles USB' in port.description or 'USB Serial Port' in port.description:
             return port.device
     return None
 
@@ -48,9 +48,9 @@ zarrow = arrow(length=4, shaftwidth=.1, color=color.blue, axis=vector(0, 0, 1))
 positions = [
     vector(3, 4, 0),
     vector(-3, 4, 0),
-    vector(0, 6, 0),
     vector(2, -2, 0),
-    vector(-2, -2, 0)
+    vector(-2, -2, 0),
+    vector(0, 6, 0)
 ]
 
 BNOs = []
@@ -80,11 +80,14 @@ while True:
             for i in range(5):
                 quaternions.append([float(splitPacket[j]) for j in range(i*4, (i+1)*4)])
 
-        for i, q in enumerate(quaternions):
-                
+            for i, q in enumerate(quaternions):
+                    
                 #Ausrichtung der BNOs berechnen
                 roll = -math.atan2(2 * (q[0] * q[1] + q[2] * q[3]), 1 - 2 * (q[1] * q[1] + q[2] * q[2]))
-                pitch = math.asin(2 * (q[0] * q[2] - q[3] * q[1]))
+                sin_pitch = 2 * (q[0] * q[2] - q[3] * q[1])
+                # Sicherstellen, dass der Wert im Bereich [-1, 1] liegt
+                sin_pitch = max(-1, min(1, sin_pitch))
+                pitch = math.asin(sin_pitch)
                 yaw = -math.atan2(2 * (q[0] * q[3] + q[1] * q[2]), 1 - 2 * (q[2] * q[2] + q[3] * q[3])) - np.pi / 2
 
                 rate(50)
@@ -105,5 +108,6 @@ while True:
                 arrows[i][2].length = 1
 
     except Exception as e:
+        print("Error:")
         print(e)
         break
