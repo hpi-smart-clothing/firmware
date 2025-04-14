@@ -23,11 +23,11 @@ void setup() {
 
   for (int i = 0; i < SIZE; i++){
     tcaSelect(IMU_PORTS[i]);
-    Serial.print("Initialisiere IMU an Port "); Serial.println(IMU_PORTS[i]);
+    Serial.print("Status: Initialisierung: Initialise IMU in port: "); Serial.println(IMU_PORTS[i]);
     delay(100);
     IMUS[i] = new Adafruit_BNO055(55 - i, BNO055_I2C_ADDR);
     if (!IMUS[i]->begin()) {
-      Serial.print("Sensor "); Serial.print(i); Serial.println(" nicht gefunden!");
+      Serial.print("Status: Error: Sensor "); Serial.print(i); Serial.println(" not found!");
     } else {
       IMUS[i]->setExtCrystalUse(true);
     }
@@ -63,7 +63,7 @@ void tcaSelect(uint8_t i) {
   Wire.write(1 << i);
   uint8_t result = Wire.endTransmission();
   if (result != 0) {
-    Serial.print("TCA9548A Fehler bei Kanal "); Serial.println(i);
+    Serial.print("Status: Error: TCA9548A Error on channel: "); Serial.println(i);
   }
 }
 
@@ -71,9 +71,9 @@ void checkSensorForError(int i) {
   uint8_t system_status, self_test_result, system_error;
   IMUS[i]->getSystemStatus(&system_status, &self_test_result, &system_error);
   if (system_status == 0 || system_error != 0) {
-    Serial.print("Fehler erkannt! Status: ");
+    Serial.print("Status: Error: Error recognised! Status: ");
     Serial.print(system_status);
-    Serial.print(", Fehlercode: ");
+    Serial.print(", Errorcode: ");
     Serial.println(system_error);
     restartSensor(i);
   }
@@ -81,21 +81,21 @@ void checkSensorForError(int i) {
 
 void restartSensor(int i) {
   if (!IMUS[i]->begin()) {
-      Serial.print("Fehler: Sensor "); Serial.print(i); Serial.println(" nicht gefunden!");
+      Serial.print("Status: Error: Sensor "); Serial.print(i); Serial.println(" not found!");
     } else {
       IMUS[i]->setExtCrystalUse(true);
-      Serial.print("Erfolg: Sensor ");  Serial.print(i);  Serial.println(" erfolgreich neu gestartet.");
+      Serial.print("Status: Success: Sensor ");  Serial.print(i);  Serial.println(" successfully restarted.");
       delay(50);
     }
 }
 
 void checkSensorForZeros(imu::Quaternion quat, int i) {
   if (quat.w() == 0.0 && quat.x() == 0.0 && quat.y() == 0.0 && quat.z() == 0.0) {
-    Serial.print("Fehler: Sensor "); Serial.print(i); Serial.print(": Quaternion enthält nur Nullen!");
+    Serial.print("Status: Error: Sensor "); Serial.print(i); Serial.print(": Quaternion contains only zeros!");
     restartSensor(i);
   }
   else  {
-    Serial.print("Sensor ");  Serial.print(i); Serial.print(": ");
+    Serial.print("Data: Sensor ");  Serial.print(i); Serial.print(": ");
     printValues(quat);
   }
 }
