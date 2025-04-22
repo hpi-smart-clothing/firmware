@@ -20,10 +20,10 @@ void setup() {
     
     
     delay(200);
-    /*if(!setupIMUConnection()) {
+    if(!setupIMUConnection()) {
         Serial.print("IMU n/a");
         while(1);
-        }*/
+        }
     delay(5000);
     pinMode(MOTOR_1_PIN, OUTPUT);
     pinMode(MOTOR_2_PIN, OUTPUT);
@@ -35,13 +35,13 @@ void loop() {
     // quatData[0][1] returns higher byte
 
     uint8_t quatData[NUMBER_IMUS][8]; 
-    /*if(loadData(quatData)){
-        //printQuatDataAsFloat(quatData);
+    if(loadData(quatData)){
+        printQuatDataAsFloat(quatData);
         streamQuat(quatData);
     }
     else {
         Serial.println("no data");
-    }*/
+    }
     void checkVibrationMotor();
     delay(delayForBLB - vibratioinIntensity);
     // Check if the timer for motor is active
