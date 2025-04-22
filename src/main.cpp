@@ -9,22 +9,21 @@ int vibratioinIntensity = 0; // intensity of the vibration motor (0-500)
 
 void printQuatData(uint8_t quatData[NUMBER_IMUS][8]);
 void printQuatDataAsFloat(uint8_t quatData[NUMBER_IMUS][8]);
-void vibrationRight();
-void vibrationLeft();
+void vibration(uint8_t motor, uint8_t strength, uint8_t duration);
 void checkVibrationMotor();
 
 void setup() {
     Serial.begin(115200);
     delay(1000);
     setupBLE();
-    setVibrationRightCallback(vibrationRight);
-    setVibrationLeftCallback(vibrationLeft);
+    setVibrationCallback(vibration);
+    
     
     delay(200);
-    if(!setupIMUConnection()) {
+    /*if(!setupIMUConnection()) {
         Serial.print("IMU n/a");
         while(1);
-        }
+        }*/
     delay(5000);
     pinMode(MOTOR_1_PIN, OUTPUT);
     pinMode(MOTOR_2_PIN, OUTPUT);
@@ -36,14 +35,14 @@ void loop() {
     // quatData[0][1] returns higher byte
 
     uint8_t quatData[NUMBER_IMUS][8]; 
-    if(loadData(quatData)){
-        printQuatDataAsFloat(quatData);
+    /*if(loadData(quatData)){
+        //printQuatDataAsFloat(quatData);
         streamQuat(quatData);
     }
     else {
         Serial.println("no data");
-    }
-    void checkVibrationMotor()
+    }*/
+    void checkVibrationMotor();
     delay(delayForBLB - vibratioinIntensity);
     // Check if the timer for motor is active
 }
@@ -90,20 +89,26 @@ void printQuatDataAsFloat(uint8_t quatData[NUMBER_IMUS][8]) {
     Serial.println();
 }
 
-void vibrationRight() {
-    Serial.println("vibrate right");
-    timerForMotor1 = 20; // Set the timer for motor 1
-    setVibrationIntensity(100); // Set the intensity for motor 1
-}
-
-void vibrationLeft() {
-    Serial.println("vibrate left");
-    timerForMotor2 = 20; // Set the timer for motor 2
-    setVibrationIntensity(100); // Set the intensity for motor 2
-}
-
-void setVibrationIntensity(int intensity) {
-    vibratioinIntensity = intensity;
+void vibration(uint8_t motor, uint8_t strength, uint8_t duration) {
+    Serial.print("Motor: ");
+    Serial.print(motor);
+    Serial.print(" Strength: ");
+    Serial.print(strength);
+    Serial.print(" Duration: ");
+    Serial.println(duration);
+    if(motor == 1) {
+        timerForMotor1 = duration; // Set the timer for motor 1
+    } else if (motor == 2) {
+        timerForMotor2 = duration; // Set the timer for motor 2
+    } else if (motor == 3) {
+        timerForMotor1 = duration; // Set the timer for motor 1
+        timerForMotor2 = duration; // Set the timer for motor 2
+    } else {
+        Serial.println("Invalid motor number. Use 1, 2, or 3.");
+        return;
+    }
+    
+    vibratioinIntensity = strength; // Set the intensity of the vibration motor (0-500)
 }
 
 void checkVibrationMotor() {

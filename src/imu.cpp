@@ -1,6 +1,5 @@
 #include <Wire.h>
 #include <Arduino.h>
-#include <Adafruit_BNO055.h> // Include the Adafruit BNO055 library
 #include "imu.h"
 #include "config.h"
 

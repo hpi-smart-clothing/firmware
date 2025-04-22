@@ -14,11 +14,9 @@
 #define CHARACTERISTIC_UUID_IMU "6E400005-B5A3-F393-E0A9-E50E24DCCA9E"
 
 BLEServer *pServer = NULL;
-BLECharacteristic *pVRightCharacteristic;
-BLECharacteristic *pVLeftCharacteristic;
+BLECharacteristic *pVibrationCharacteristic;
 BLECharacteristic *pIMUCharacteristic;
-BLECallback vibrationCallbackRight = nullptr;
-BLECallback vibrationCallbackLeft = nullptr;
+BLECallback vibrationCallback = nullptr;
 bool deviceConnected = false;
 
 class MyServerCallbacks : public BLEServerCallbacks
@@ -38,43 +36,29 @@ class MyServerCallbacks : public BLEServerCallbacks
   }
 };
 
-class MyCallbacks : public BLECharacteristicCallbacks
+class VibrationCallbacks : public BLECharacteristicCallbacks
 {
   void onWrite(BLECharacteristic *pCharacteristic)
   {
-    if (vibrationCallbackRight != nullptr)
+    std::string value = pCharacteristic->getValue();
+    Serial.println(value.c_str());
+    auto dataLength = pCharacteristic->getLength();
+    auto data = pCharacteristic->getData();
+    for (int i = 0; i < dataLength; i++)
     {
-      vibrationCallbackRight();
+      Serial.print(data[i], HEX);
+      Serial.print(" ");
+    }
+    if (vibrationCallback != nullptr && dataLength == 3)
+    {
+      vibrationCallback(data[0], data[1], data[2]);
     }
   }
 };
 
-// Callback for left vibration
-class VibrationLeftCallback : public BLECharacteristicCallbacks
+void setVibrationCallback(BLECallback callbackFunction)
 {
-  void onWrite(BLECharacteristic *pCharacteristic) override
-  {
-    vibrationCallbackLeft();
-  }
-};
-
-// Callback for right vibration
-class VibrationRightCallback : public BLECharacteristicCallbacks
-{
-  void onWrite(BLECharacteristic *pCharacteristic) override
-  {
-    vibrationCallbackRight();
-  }
-};
-
-void setVibrationLeftCallback(BLECallback callbackFunction)
-{
-  vibrationCallbackLeft = callbackFunction;
-}
-
-void setVibrationRightCallback(BLECallback callbackFunction)
-{
-  vibrationCallbackRight = callbackFunction;
+  vibrationCallback = callbackFunction;
 }
 
 void setupBLE()
@@ -98,13 +82,10 @@ void setupBLE()
   // Add Vibration characteristics to the Vibration service
   // PROPERTY_WRITE -> with Feedback
   // PROPERTY_WRITE_NR -> without Feedback
-  pVLeftCharacteristic = pVibrationService->createCharacteristic(CHARACTERISTIC_UUID_VIBRATION_LEFT, BLECharacteristic::PROPERTY_WRITE);
-  pVRightCharacteristic = pVibrationService->createCharacteristic(CHARACTERISTIC_UUID_VIBRATION_RIGHT, BLECharacteristic::PROPERTY_WRITE);
-  pVLeftCharacteristic->addDescriptor(new BLE2902());
-  pVRightCharacteristic->addDescriptor(new BLE2902());
+  pVibrationCharacteristic = pVibrationService->createCharacteristic(CHARACTERISTIC_UUID_VIBRATION_LEFT, BLECharacteristic::PROPERTY_WRITE);
+  pVibrationCharacteristic->addDescriptor(new BLE2902());
   // Setting Callbacks
-  pVLeftCharacteristic->setCallbacks(new VibrationLeftCallback());
-  pVRightCharacteristic->setCallbacks(new VibrationRightCallback());
+  pVibrationCharacteristic->setCallbacks(new VibrationCallbacks());
 
   // Start the services
   pVibrationService->start();

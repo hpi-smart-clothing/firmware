@@ -2,11 +2,11 @@
 #define BLE_H
 #include <Arduino.h>
 
-typedef void (*BLECallback)();
+//typedef void (*BLECallback)();
+typedef void (*BLECallback)(uint8_t vibrationMotor, uint8_t strength, uint8_t duration);
 
 void setupBLE();
-void setVibrationRightCallback(BLECallback callbackFunction);
-void setVibrationLeftCallback(BLECallback callbackFunction);
+void setVibrationCallback(BLECallback callbackFunction);
 bool streamQuat(uint8_t (*pQuatData)[8]);
 
 #endif
