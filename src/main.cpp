@@ -42,7 +42,7 @@ void loop() {
     else {
         Serial.println("no data");
     }
-    void checkVibrationMotor();
+    checkVibrationMotor();
     delay(delayForBLB - vibratioinIntensity);
     // Check if the timer for motor is active
 }
