@@ -50,7 +50,11 @@ bool restartIMU(int port)
     selectIMU(port);
     delay(10);
     Serial.println("restarting: " + String(port));
-    return initIMU();
+    if(initIMU()) {
+        delay(420);
+        return true;
+    }
+    return false;
 }
 
 bool startIMUs()
