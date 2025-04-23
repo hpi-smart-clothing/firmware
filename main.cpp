@@ -81,12 +81,12 @@ void checkSensorForError(int i) {
 
 void restartSensor(int i) {
   if (!IMUS[i]->begin()) {
-      Serial.print("Status: Error: Sensor "); Serial.print(i); Serial.println(" not found!");
-    } else {
-      IMUS[i]->setExtCrystalUse(true);
-      Serial.print("Status: Success: Sensor ");  Serial.print(i);  Serial.println(" successfully restarted.");
-      delay(50);
-    }
+    Serial.print("Status: Error: Sensor "); Serial.print(i); Serial.println(" not found!");
+  } else {
+    IMUS[i]->setExtCrystalUse(true);
+    Serial.print("Status: Success: Sensor ");  Serial.print(i);  Serial.println(" successfully restarted.");
+    delay(420);
+  }
 }
 
 void checkSensorForZeros(imu::Quaternion quat, int i) {
