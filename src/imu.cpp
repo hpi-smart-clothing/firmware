@@ -29,27 +29,11 @@ bool setupIMUConnection()
     return true;
 }
 
-// For testing only
-void scanI2C()
-{
-    for (byte address = 1; address < 127; address++)
-    {
-        Wire.beginTransmission(address);
-        byte error = Wire.endTransmission();
-
-        if (error == 0)
-        {
-            Serial.print("I2C device found at 0x");
-            Serial.println(address, HEX);
-        }
-    }
-}
-
 bool restartIMU(int port)
 {
     selectIMU(port);
     delay(10);
-    Serial.println("restarting: " + String(port));
+    Serial.println("Status: Error: restarting: " + String(port));
     if(initIMU()) {
         delay(420);
         return true;
@@ -64,7 +48,7 @@ bool startIMUs()
     {
         if (!restartIMU(i))
         {
-            Serial.println("Sensor " + String(i) + " didn't connect");
+            Serial.println("Status: Error: Sensor " + String(i) + " didn't connect");
             return false;
         }
         delay(IMU_INIT_DELAY);
@@ -83,7 +67,7 @@ bool read(uint8_t *pBuffer, int registerAddress, int numberBytes)
     Wire.write(registerAddress);
     if (Wire.endTransmission(false))
     { // endTransmission(false) tells I2C that we want the connection to stay open to receive data
-        Serial.print("Transmission failed");
+        Serial.print("Status: Error: Transmission failed");
         return false;
     }
 
@@ -91,8 +75,8 @@ bool read(uint8_t *pBuffer, int registerAddress, int numberBytes)
     uint8_t byteCount = Wire.requestFrom(IMU_SPI_ADDRESS, numberBytes); // We request the next n bytes
     if (byteCount < numberBytes)
     {
-        Serial.println("Not enough Bytes");
-        Serial.println("requested: " + String(numberBytes) + "got: " + String(byteCount));
+        Serial.println("Status: Error: Not enough Bytes");
+        Serial.println("Status: Error: requested: " + String(numberBytes) + "got: " + String(byteCount));
         return false;
     }
 
@@ -143,7 +127,7 @@ bool selectIMU(int port)
     int transmissionID = Wire.endTransmission();
     if (transmissionID)
     {
-        Serial.println("Selection Error: " + String(transmissionID));
+        Serial.println("Status: Error: Selection Error: " + String(transmissionID));
         return false;
     }
     return true;
@@ -186,28 +170,28 @@ bool initIMU()
     // Setting Page ID to 0x00
     if (!setPageID())
     {
-        Serial.println("Page ID couldn't been set");
+        Serial.println("Status: Error: Page ID couldn't been set");
         return false;
     }
 
     // Checking Chip ID (should be 0xA0)
     if (!checkChipID())
     {
-        Serial.println("Chip ID doesn't match");
+        Serial.println("Status: Error: Chip ID doesn't match");
         return false;
     }
 
     // Setting Power mode to 0x00 (normal)
     if (!setPowerMode())
     {
-        Serial.println("Couldn't set power mode");
+        Serial.println("Status: Error: Couldn't set power mode");
         return false;
     }
 
     // Setting Sys Trigger to 0x80 (external clock)
     if (!setSysTrigger())
     {
-        Serial.println("Couldn't set clock to external");
+        Serial.println("Status: Error: Couldn't set clock to external");
         return false;
     }
 
@@ -254,7 +238,7 @@ bool loadData(uint8_t pQuatData[NUMBER_IMUS][8])
         delay(10);
         if (!readIMUData(pQuatData[i]))
         {
-            Serial.println("no data: " + String(i));
+            Serial.println("Status: Error: " + String(i) + (": Quaternions contains only zeros"));
             restartIMU(i);
             return false;
         }
