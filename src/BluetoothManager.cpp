@@ -75,7 +75,7 @@ void BluetoothManager::handleVibrationData(size_t size, uint8_t* data) const
         interval->rightIntensity = data[4 * i + 3];
     }
     vibrationCallback(size / 4, intervals);
-    delete intervals;
+    delete[] intervals;
 }
 
 
