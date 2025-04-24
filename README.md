@@ -1,4 +1,4 @@
-```md
+
 # 📦 Firmware for BNO055 with Multiplexer
 
 ## 📐 IMU Data Format (Quaternion)
