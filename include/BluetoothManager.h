@@ -15,6 +15,7 @@ class BluetoothManager
 public:
     BluetoothManager(void (*vibrationCallback)(size_t size, const VibrationInterval_t *intervals));
     void streamIMUQuats(uint8_t (*pQuatData)[8]) const;
+    void streamIMUQuats2(uint8_t (*pQuatData)[8]) const;
 
 private:
     BLEServer* pServer;

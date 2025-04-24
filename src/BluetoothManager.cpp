@@ -64,6 +64,22 @@ void BluetoothManager::streamIMUQuats(uint8_t (*pQuatData)[8]) const
     }
 }
 
+void BluetoothManager::streamIMUQuats2(uint8_t (*pQuatData)[8]) const
+{
+    // Transmits 6 quaternions in one 48 byte packet at once
+
+    uint8_t quatStream[48];
+    
+    for(int i = 0; i < NUMBER_IMUS; i ++)
+    {
+        memcpy(quatStream + 8 * i, pQuatData[i], 8);
+    }
+
+    pIMUCharacteristic->setValue(quatStream, 48);
+    pIMUCharacteristic->notify();
+    
+}
+
 void BluetoothManager::handleVibrationData(size_t size, uint8_t* data) const
 {
     const auto intervals = new VibrationInterval_t[size / 4];
