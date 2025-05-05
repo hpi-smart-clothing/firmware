@@ -63,7 +63,7 @@ void printValues(uint8_t* quatData){
     int16_t qx = ((int16_t)quatData[3] << 8) | (int16_t)quatData[2];
     int16_t qy = ((int16_t)quatData[5] << 8) | (int16_t)quatData[4];
     int16_t qz = ((int16_t)quatData[7] << 8) | (int16_t)quatData[6];
-    float scale = 1.0 / 16384.0;
+    float scale = 1.0 / 32767.0;
     Serial.print(qw * scale, 4);
     Serial.print(",");
     Serial.print(qx * scale, 4);

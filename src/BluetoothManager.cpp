@@ -39,29 +39,15 @@ BluetoothManager::BluetoothManager(void (*vibrationCallback)(size_t size, const 
 
 void BluetoothManager::streamIMUQuats(uint8_t (*pQuatData)[8]) const
 {
-    // Each Transmission we send 17 bytes of uint8_t (2 Quaternions)
-    // Each Quaternion Value (w,x,y,z) consists of 2 bytes
-    // Lower byte comes before the higher one in the array
-    // Last byte is either 00 for continuing stream or 01 for new stream
-    // 1 stream is 6 quats split into 3 packets
+    // send all quaternions in one packet, 48 bytes, 2 bytes per quat component in fixed point
     bool newStream = true;
-    uint8_t packet[17];
-    for (int i = 0; i < NUMBER_IMUS; i += 2)
+    uint8_t packet[48];
+    for (int i = 0; i < NUMBER_IMUS; i += 1)
     {
-        memcpy(packet, pQuatData[i], 8);
-        memcpy(packet + 8, pQuatData[i + 1], 8);
-        if (newStream)
-        {
-            packet[16] = 0x01;
-            newStream = false;
-        }
-        else
-        {
-            packet[16] = 0x00;
-        }
-        pIMUCharacteristic->setValue(packet, 17);
-        pIMUCharacteristic->notify();
+        memcpy(packet+i*8, pQuatData[i], 8);
     }
+    pIMUCharacteristic->setValue(packet, 48);
+    pIMUCharacteristic->notify();
 }
 
 void BluetoothManager::streamIMUQuats2(uint8_t (*pQuatData)[8]) const
@@ -86,9 +72,10 @@ void BluetoothManager::handleVibrationData(size_t size, uint8_t* data) const
     for (int i = 0; i < size / 4; i++)
     {
         const auto interval = &intervals[i];
-        interval->duration = data[4 * i] << 8 | data[4 * i + 1];
+        interval->duration = data[4 * i + 1] << 8 | data[4 * i];
         interval->leftIntensity = data[4 * i + 2];
         interval->rightIntensity = data[4 * i + 3];
+        Serial.println(interval->duration);
     }
     vibrationCallback(size / 4, intervals);
     delete[] intervals;
