@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include "imu.h"
 #include "config.h"
+#include <array>
 
 bool selectIMU(int port);
 bool initIMU();
