@@ -25,7 +25,7 @@ void setup()
         Serial.print("IMU n/a");
         while (true);
     }
-    delay(5000);
+    delay(REQUIERD_TIME_AFTER_IMU_START);
     Serial.println("setup done");
 }
 
@@ -43,22 +43,25 @@ void loop()
     }
     if (allFalse)
     {
-        Serial.println("no data");
+        Serial.println("Status: Error: no data");
     }
     else
     {
         int sensorIdx = hasTooManyRestarts();
-        if(sensorIdx!=NUMBER_IMUS)
+        if(sensorIdx!=NUMBER_IMUS+1)
         {
-            Serial.println("no data even after 3 restarts in Sensor: " + String(sensorIdx)); 
+            Serial.println("Status: Error: no data even after 3 restarts in Sensor: " + String(sensorIdx)); 
+            Serial.println("Status: Restarting ESP");
+            delay(200);
+            ESP.restart();
         }
         else
         {
             printQuatDataAsFloat(quatData);
             bluetoothManager->streamIMUQuats(quatData);
-            delay(30);
         }
     }
+    delay(SAMPLE_FREQUENCY);
 }
 
 void printQuatDataAsFloat(uint8_t quatData[NUMBER_IMUS][8])
@@ -71,8 +74,6 @@ void printQuatDataAsFloat(uint8_t quatData[NUMBER_IMUS][8])
 }
 
 void printValues(uint8_t* quatData){
-
-
     int16_t qw = ((int16_t)quatData[1] << 8) | (int16_t)quatData[0];
     int16_t qx = ((int16_t)quatData[3] << 8) | (int16_t)quatData[2];
     int16_t qy = ((int16_t)quatData[5] << 8) | (int16_t)quatData[4];

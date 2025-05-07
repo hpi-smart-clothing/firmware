@@ -3,6 +3,7 @@
 #include "imu.h"
 #include "config.h"
 #include <array>
+#include <cmath>
 
 bool selectIMU(int port);
 bool initIMU();
@@ -234,8 +235,8 @@ bool readIMUData(uint8_t *pBuffer)
 void fillEmptyValues(uint8_t *pBuffer){
     for (int q = 0; q < 4; q++) 
     {
-        pBuffer[q * 2] = 0xFE;      // LSB of -2
-        pBuffer[q * 2 + 1] = 0xFF;  // MSB of -2
+        pBuffer[q * 2] = 0x00;      // LSB of -2
+        pBuffer[q * 2 + 1] = 0x00;  // MSB of -2
     }
 }
 
@@ -251,6 +252,7 @@ std::array<bool, NUMBER_IMUS> loadData(uint8_t pQuatData[NUMBER_IMUS][8])
         {
             if (!readIMUData(pQuatData[i]))
             {
+                fillEmptyValues(pQuatData[i]);
                 Serial.println("Status: Error: " + String(i) + (": Quaternions contains only zeros"));
                 currentRestarts[i]++;
                 status[i] = false;
@@ -265,7 +267,7 @@ std::array<bool, NUMBER_IMUS> loadData(uint8_t pQuatData[NUMBER_IMUS][8])
         else 
         {
             waitAfterIMURestart[i]++;
-            waitAfterIMURestart[i] %= 5;
+            waitAfterIMURestart[i] %= (REQUIERD_TIME_AFTER_IMU_START + SAMPLE_FREQUENCY - 1) / SAMPLE_FREQUENCY;
             fillEmptyValues(pQuatData[i]);
         }
     }
@@ -276,7 +278,7 @@ int hasTooManyRestarts()
 {
     for(int i = 0; i < NUMBER_IMUS; i++)
     {
-        if (currentRestarts[i]>2) return i;
+        if (currentRestarts[i] > REQUIRED_NUMBER_OF_RESTARTS) return i;
     }
     return NUMBER_IMUS+1;
 }
