@@ -4,6 +4,7 @@
 #include "config.h"
 
 bool setupIMUConnection();
-bool loadData(uint8_t pQuatData[NUMBER_IMUS][8]);
+std::array<bool, NUMBER_IMUS> loadData(uint8_t pQuatData[NUMBER_IMUS][8]);
+int hasTooManyRestarts();
 
 #endif

@@ -35,15 +35,29 @@ void loop()
     // quatData[0][1] returns higher byte
 
     uint8_t quatData[NUMBER_IMUS][8];
-    if (loadData(quatData))
+    std::array<bool, NUMBER_IMUS> status = loadData(quatData);
+    bool allFalse = true;
+    for(bool v: status)
     {
-        printQuatDataAsFloat(quatData);
-        bluetoothManager->streamIMUQuats(quatData);
-        delay(30);
+        if (v) allFalse = false;
+    }
+    if (allFalse)
+    {
+        Serial.println("no data");
     }
     else
     {
-        Serial.println("no data");
+        int sensorIdx = hasTooManyRestarts();
+        if(sensorIdx!=NUMBER_IMUS)
+        {
+            Serial.println("no data even after 3 restarts in Sensor: " + String(sensorIdx)); 
+        }
+        else
+        {
+            printQuatDataAsFloat(quatData);
+            bluetoothManager->streamIMUQuats(quatData);
+            delay(30);
+        }
     }
 }
 

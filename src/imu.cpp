@@ -8,6 +8,8 @@ bool selectIMU(int port);
 bool initIMU();
 bool startIMUs();
 void scanI2C();
+std::array<int, NUMBER_IMUS> currentRestarts{};
+std::array<int, NUMBER_IMUS> waitAfterIMURestart{};
 
 bool setupIMUConnection()
 {
@@ -36,7 +38,6 @@ bool restartIMU(int port)
     delay(10);
     Serial.println("Status: Error: restarting: " + String(port));
     if(initIMU()) {
-        delay(420);
         return true;
     }
     return false;
@@ -230,19 +231,52 @@ bool readIMUData(uint8_t *pBuffer)
     return false;
 }
 
-bool loadData(uint8_t pQuatData[NUMBER_IMUS][8])
+void fillEmptyValues(uint8_t *pBuffer){
+    for (int q = 0; q < 4; q++) 
+    {
+        pBuffer[q * 2] = 0xFE;      // LSB of -2
+        pBuffer[q * 2 + 1] = 0xFF;  // MSB of -2
+    }
+}
+
+std::array<bool, NUMBER_IMUS> loadData(uint8_t pQuatData[NUMBER_IMUS][8])
 {
+    std::array<bool, NUMBER_IMUS> status = {true,true,true,true,true,true};
     // Loads Quaternion from each IMU into the 2d Array
     for (int i = 0; i < NUMBER_IMUS; i++)
     {
         selectIMU(i);
         delay(10);
-        if (!readIMUData(pQuatData[i]))
+        if (waitAfterIMURestart[i] == 0)
         {
-            Serial.println("Status: Error: " + String(i) + (": Quaternions contains only zeros"));
-            restartIMU(i);
-            return false;
+            if (!readIMUData(pQuatData[i]))
+            {
+                Serial.println("Status: Error: " + String(i) + (": Quaternions contains only zeros"));
+                currentRestarts[i]++;
+                status[i] = false;
+                restartIMU(i);
+            }
+            else
+            {
+                status[i] = true;
+                currentRestarts[i] = 0;
+            }
+        }
+        else 
+        {
+            waitAfterIMURestart[i]++;
+            waitAfterIMURestart[i] %= 5;
+            fillEmptyValues(pQuatData[i]);
         }
     }
-    return true;
+    return status;
+}
+
+int hasTooManyRestarts()
+{
+    for(int i = 0; i < NUMBER_IMUS; i++)
+    {
+        if (currentRestarts[i]>2) return i;
+    }
+    return NUMBER_IMUS+1;
 }
