@@ -4,7 +4,7 @@
 #include <array>
 #include <Adafruit_BNO055.h>
 
-#define BNO055_SAMPLERATE_DELAY_MS (100)
+#define BNO055_SAMPLERATE_DELAY_MS (1000)
 #define BNO055_I2C_ADDR 0x29 
 #define TCAADDR 0x70  
 
@@ -80,23 +80,27 @@ bool checkSensorForZeros(imu::Quaternion quat) {
 }
 
 void printAccelData(sensors_event_t event) {
+  Serial.print("Accelerometer: ");
   Serial.print("X: "); Serial.print(event.acceleration.x); Serial.print(" ");
   Serial.print("Y: "); Serial.print(event.acceleration.y); Serial.print(" ");
   Serial.print("Z: "); Serial.print(event.acceleration.z); Serial.println(" m/s^2");
 }
 
 void printMagData(sensors_event_t event) {
+  Serial.print("Magnetometer: ");
   Serial.print("X: "); Serial.print(event.magnetic.x); Serial.print(" ");
   Serial.print("Y: "); Serial.print(event.magnetic.y); Serial.print(" ");
   Serial.print("Z: "); Serial.print(event.magnetic.z); Serial.println(" uT");
 }
 void printGyroData(sensors_event_t event) {
+  Serial.print("Gyroscope: ");
   Serial.print("X: "); Serial.print(event.gyro.x); Serial.print(" ");
   Serial.print("Y: "); Serial.print(event.gyro.y); Serial.print(" ");
   Serial.print("Z: "); Serial.print(event.gyro.z); Serial.println(" rad/s");
 }
 
 void printQuatData(imu::Quaternion quat) {
+  Serial.print("Quaternion: ");
   Serial.print("W: "); Serial.print(quat.w()); Serial.print(" ");
   Serial.print("X: "); Serial.print(quat.x()); Serial.print(" ");
   Serial.print("Y: "); Serial.print(quat.y()); Serial.print(" ");
@@ -107,6 +111,7 @@ void printTempData(sensors_event_t event) {
   Serial.print("Temperature: "); Serial.print(event.temperature); Serial.println(" C");
 }
 void printEulerData(sensors_event_t event) {
+  Serial.print("Euler: ");
   Serial.print("Heading: "); Serial.print(event.orientation.x); Serial.print(" ");
   Serial.print("Roll: "); Serial.print(event.orientation.y); Serial.print(" ");
   Serial.print("Pitch: "); Serial.print(event.orientation.z); Serial.println(" degrees");
