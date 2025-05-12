@@ -7,7 +7,8 @@ This Firmware is only for collecting data, it does not work with BLE, it does no
 
 It sends all Data the Sensors collect, not only the Quaternions. Its sends it in the following Format:
 
-Data: Begin Data from IMU 5:\\
+Data: Begin Data from IMU 5:
+
 Data: IMU 5 Accelerometer: X: 0.00 Y: 73.62 Z: 59.75 m/s^2
 
 Data: IMU 5 Magnetometer: X: 0.00 Y: 73.62 Z: 59.75 uT
