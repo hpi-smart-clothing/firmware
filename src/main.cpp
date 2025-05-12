@@ -119,11 +119,17 @@ void printEulerData(sensors_event_t event) {
 
 void printAllData(sensors_event_t event, imu::Quaternion quat, int i) {
   Serial.print("Data: Begin Data from IMU "); Serial.print(i); Serial.println(": ");
+  Serial.print("Data: IMU "); Serial.print(i); Serial.print(" ");
   printAccelData(event);
+  Serial.print("Data: IMU "); Serial.print(i); Serial.print(" ");
   printMagData(event);
+  Serial.print("Data: IMU "); Serial.print(i); Serial.print(" ");
   printGyroData(event);
+  Serial.print("Data: IMU "); Serial.print(i); Serial.print(" ");
   printQuatData(quat);
+  Serial.print("Data: IMU "); Serial.print(i); Serial.print(" ");
   printTempData(event);
+  Serial.print("Data: IMU "); Serial.print(i); Serial.print(" ");
   printEulerData(event);
   Serial.print("Data: End Data from IMU "); Serial.println(i);
   Serial.println();
