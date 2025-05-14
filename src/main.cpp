@@ -15,12 +15,6 @@ Adafruit_BNO055* IMUS[SIZE];
 void tcaSelect(uint8_t i);
 void restartSensor(int i);
 bool checkSensorForZeros(imu::Quaternion quat);
-void printAccelData(sensors_event_t event);
-void printMagData(sensors_event_t event);
-void printGyroData(sensors_event_t event);
-void printQuatData(imu::Quaternion quat);
-void printTempData(sensors_event_t event);
-void printEulerData(sensors_event_t event);
 void printAllData(sensors_event_t event, imu::Quaternion quat, int i);
 
 void setup() {
@@ -28,7 +22,10 @@ void setup() {
   Wire.begin();
   for (int i = 0; i < SIZE; i++){
     tcaSelect(IMU_PORTS[i]);
-    Serial.print("Status: Initialise IMU on port: "); Serial.println(IMU_PORTS[i]);
+    Serial.print("{")
+    Serial.print("\"imu\":"); Serial.print(i); Serial.print(",");
+    Serial.print("\"message\":"); Serial.print("\"Status: Initialize IMU on port: "); Serial.print(IMU_PORTS[i]); Serial.print("\"");
+    Serial.println("}");
     IMUS[i] = new Adafruit_BNO055(55 - i, BNO055_I2C_ADDR);
     restartSensor(i);
     delay(420);
@@ -43,7 +40,10 @@ void loop() {
     IMUS[i]->getEvent(&event);
     imu::Quaternion quat = IMUS[i]->getQuat();
     if (checkSensorForZeros(quat)) {
-      Serial.print("Status: Error: Sensor "); Serial.print(i); Serial.println(" has only zeros!");
+      Serial.print("{")
+      Serial.print("\"imu\":"); Serial.print(i); Serial.print(",");
+      Serial.print("\"message\":"); Serial.print("\"Error: Only Zeros\"");
+      Serial.println("}");
       restartSensor(i);
     }
     else
@@ -58,16 +58,25 @@ void tcaSelect(uint8_t i) {
   Wire.write(1 << i);
   uint8_t result = Wire.endTransmission();
   if (result != 0) {
-    Serial.print("Status: Error: TCA9548A Error on channel: "); Serial.println(i);
+    Serial.print("{")
+    Serial.print("\"imu\":"); Serial.print(-1); Serial.print(",");
+    Serial.print("\"message\":"); Serial.print("\"Error: TCA9548A Error on channel\"");
+    Serial.println("}");
   }
 }
 
 void restartSensor(int i) {
   if (!IMUS[i]->begin()) {
-    Serial.print("Status: Error: Sensor "); Serial.print(i); Serial.println(" not found!");
+    Serial.print("{")
+    Serial.print("\"imu\":"); Serial.print(i); Serial.print(",");
+    Serial.print("\"message\":"); Serial.print("\"Error: Sensor Not Found\"");
+    Serial.println("}");
   } else {
     IMUS[i]->setExtCrystalUse(true);
-    Serial.print("Status: Success: Sensor ");  Serial.print(i);  Serial.println(" successfully restarted.");
+    Serial.print("{")
+    Serial.print("\"imu\":"); Serial.print(i); Serial.print(",");
+    Serial.print("\"message\":"); Serial.print("\"Status: Sensor Success Restarted\"");
+    Serial.println("}");
     delay(420);
   }
 }
@@ -79,58 +88,31 @@ bool checkSensorForZeros(imu::Quaternion quat) {
     return false;
 }
 
-void printAccelData(sensors_event_t event) {
-  Serial.print("Accelerometer: ");
-  Serial.print("X: "); Serial.print(event.acceleration.x); Serial.print(" ");
-  Serial.print("Y: "); Serial.print(event.acceleration.y); Serial.print(" ");
-  Serial.print("Z: "); Serial.print(event.acceleration.z); Serial.println(" m/s^2");
-}
-
-void printMagData(sensors_event_t event) {
-  Serial.print("Magnetometer: ");
-  Serial.print("X: "); Serial.print(event.magnetic.x); Serial.print(" ");
-  Serial.print("Y: "); Serial.print(event.magnetic.y); Serial.print(" ");
-  Serial.print("Z: "); Serial.print(event.magnetic.z); Serial.println(" uT");
-}
-void printGyroData(sensors_event_t event) {
-  Serial.print("Gyroscope: ");
-  Serial.print("X: "); Serial.print(event.gyro.x); Serial.print(" ");
-  Serial.print("Y: "); Serial.print(event.gyro.y); Serial.print(" ");
-  Serial.print("Z: "); Serial.print(event.gyro.z); Serial.println(" rad/s");
-}
-
-void printQuatData(imu::Quaternion quat) {
-  Serial.print("Quaternion: ");
-  Serial.print("W: "); Serial.print(quat.w()); Serial.print(" ");
-  Serial.print("X: "); Serial.print(quat.x()); Serial.print(" ");
-  Serial.print("Y: "); Serial.print(quat.y()); Serial.print(" ");
-  Serial.print("Z: "); Serial.print(quat.z()); Serial.println();
-}
-
-void printTempData(sensors_event_t event) {
-  Serial.print("Temperature: "); Serial.print(event.temperature); Serial.println(" C");
-}
-void printEulerData(sensors_event_t event) {
-  Serial.print("Euler: ");
-  Serial.print("Heading: "); Serial.print(event.orientation.x); Serial.print(" ");
-  Serial.print("Roll: "); Serial.print(event.orientation.y); Serial.print(" ");
-  Serial.print("Pitch: "); Serial.print(event.orientation.z); Serial.println(" degrees");
-}
-
 void printAllData(sensors_event_t event, imu::Quaternion quat, int i) {
-  Serial.print("Data: Begin Data from IMU "); Serial.print(i); Serial.println(": ");
-  Serial.print("Data: IMU "); Serial.print(i); Serial.print(" ");
-  printAccelData(event);
-  Serial.print("Data: IMU "); Serial.print(i); Serial.print(" ");
-  printMagData(event);
-  Serial.print("Data: IMU "); Serial.print(i); Serial.print(" ");
-  printGyroData(event);
-  Serial.print("Data: IMU "); Serial.print(i); Serial.print(" ");
-  printQuatData(quat);
-  Serial.print("Data: IMU "); Serial.print(i); Serial.print(" ");
-  printTempData(event);
-  Serial.print("Data: IMU "); Serial.print(i); Serial.print(" ");
-  printEulerData(event);
-  Serial.print("Data: End Data from IMU "); Serial.println(i);
-  Serial.println();
+  Serial.print("{");
+  
+  Serial.print("\"imu\":"); Serial.print(i); Serial.print(",");
+
+  Serial.print("\"message\":"); Serial.print("\"Data: Success\""); Serial.print(",");
+
+  Serial.print("\"values\":[");
+  Serial.print(event.acceleration.x); Serial.print(",");
+  Serial.print(event.acceleration.y); Serial.print(",");
+  Serial.print(event.acceleration.z); Serial.print(",");
+  Serial.print(event.magnetic.x); Serial.print(",");
+  Serial.print(event.magnetic.y); Serial.print(",");
+  Serial.print(event.magnetic.z); Serial.print(",");
+  Serial.print(event.gyro.x); Serial.print(",");
+  Serial.print(event.gyro.y); Serial.print(",");
+  Serial.print(event.gyro.z); Serial.print(",");
+  Serial.print(quat.w()); Serial.print(",");
+  Serial.print(quat.x()); Serial.print(",");
+  Serial.print(quat.y()); Serial.print(",");
+  Serial.print(quat.z()); Serial.print(",");
+  Serial.print(event.temperature); Serial.print(",");
+  Serial.print(event.orientation.x); Serial.print(",");
+  Serial.print(event.orientation.y); Serial.print(",");
+  Serial.print(event.orientation.z); Serial.print("]");
+  
+  Serial.println("}");
 }
