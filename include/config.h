@@ -23,12 +23,33 @@
 #define SAMPLE_FREQUENCY 100 // in ms, not smaller than 50ms
 #define REQUIERD_TIME_AFTER_IMU_START 420
 
-#define MOTOR_LEFT_PIN D0
-#define MOTOR_RIGHT_PIN D1
+#define MOTOR_LEFT_PIN D2
+#define MOTOR_RIGHT_PIN D3
 #define MOTOR_LEFT_LEDC_CHANNEL 0
 #define MOTOR_RIGHT_LEDC_CHANNEL 0
 #define MOTOR_PWM_FREQUENCY 5000 
 
 #define BLE_DEVICE_NAME "BackUp"
+
+#define READ_VOLTAGE_PIN D1
+#define READ_VOLTAGE_RESISTOR1 8200.0
+#define READ_VOLTAGE_RESISTOR2 18000.0
+#define ADCRESOLUTION 4096.0
+#define ADC_VREF 3.3
+struct VoltageEntry {
+    float mesuredVoltage;
+    float realVoltage;
+    int percentage;
+};
+
+const VoltageEntry VoltageLevel[] = {
+    {4.8, 4.2, 100},
+    {4.42, 3.9, 80},
+    {4.3, 3.8, 60},
+    {4.175, 3.7, 40},
+    {4.05, 3.6, 20},
+    {3.8, 3.4, 10},
+    {3.6, 3.2, 5}
+};
 
 #endif

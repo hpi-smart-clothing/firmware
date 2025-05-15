@@ -7,6 +7,9 @@ void printQuatData(uint8_t quatData[NUMBER_IMUS][8]);
 void printQuatDataAsFloat(uint8_t quatData[NUMBER_IMUS][8]);
 void vibrationCallback(size_t size, const VibrationInterval_t* intervals);
 void printValues(uint8_t* quatData);
+int getBatteryLevel();
+int readVoltage();
+int lookupPercent(float measuredVoltage);
 
 VibrationManager* vibrationManager;
 BluetoothManager* bluetoothManager;
@@ -61,6 +64,8 @@ void loop()
             bluetoothManager->streamIMUQuats(quatData);
         }
     }
+    Serial.println("Status: Battery: " + String(getBatteryLevel()) + "%");
+    Serial.println("Status: Voltage: " + String(readVoltage()) + "V");
     delay(SAMPLE_FREQUENCY);
 }
 
@@ -92,4 +97,26 @@ void printValues(uint8_t* quatData){
 void vibrationCallback(const size_t size, const VibrationInterval_t* intervals)
 {
     vibrationManager->submitVibrationPattern(size, intervals);
+}
+
+int readVoltage()
+{
+    float rawValue = analogRead(READ_VOLTAGE_PIN);
+    float voltage = rawValue * float(ADC_VREF) / float(ADCRESOLUTION);
+    voltage = voltage * (float(READ_VOLTAGE_RESISTOR1) + float(READ_VOLTAGE_RESISTOR2)) / float(READ_VOLTAGE_RESISTOR2);
+    return voltage;
+}
+
+int lookupPercent(float measuredVoltage) {
+    for (int i = 0; i < sizeof(VoltageLevel) / sizeof(VoltageEntry); i++) {
+        if (measuredVoltage >= VoltageLevel[i].mesuredVoltage) {
+        return VoltageLevel[i].percentage;
+        }
+    }
+    return 0; // Return 0% if no match is found
+}
+int getBatteryLevel() {
+  float measuredVoltage = readVoltage();
+  int percentage = lookupPercent(measuredVoltage);
+  return percentage;
 }
