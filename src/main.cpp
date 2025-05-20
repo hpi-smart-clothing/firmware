@@ -5,7 +5,7 @@
 #include <Adafruit_BNO055.h>
 #include <ArduinoJson.h>  
 
-#define BNO055_SAMPLERATE_DELAY_MS (100) 
+#define BNO055_SAMPLERATE_DELAY_MS (500) 
 #define BNO055_I2C_ADDR 0x29 
 #define TCAADDR 0x70
 
@@ -27,7 +27,7 @@ void printAllData(sensors_event_t &event, imu::Quaternion &quat, int i);
 void setup() {
   Serial.begin(115200);
   Wire.begin();
-  Wire.setClock(400000); 
+  //Wire.setClock(400000); 
 
   StaticJsonDocument<128> doc;
   
@@ -66,7 +66,6 @@ void loop() {
     }
   }
   
-  // Use non-blocking timing instead of delay
   static unsigned long lastSample = 0;
   unsigned long now = millis();
   unsigned long elapsed = now - lastSample;
