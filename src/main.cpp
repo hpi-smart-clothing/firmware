@@ -3,116 +3,129 @@
 #include <Wire.h>
 #include <array>
 #include <Adafruit_BNO055.h>
+#include <ArduinoJson.h>  
 
-#define BNO055_SAMPLERATE_DELAY_MS (1000)
+#define BNO055_SAMPLERATE_DELAY_MS (100) 
 #define BNO055_I2C_ADDR 0x29 
-#define TCAADDR 0x70  
+#define TCAADDR 0x70
 
-const int IMU_PORTS[] = {0, 1, 2, 3, 4, 5}; //INSERT PORTS HERE
-const int SIZE = sizeof(IMU_PORTS)/sizeof(*IMU_PORTS);
-Adafruit_BNO055* IMUS[SIZE]; 
+const uint8_t IMU_PORTS[] = {0, 1, 2, 3, 4, 5};
+const uint8_t SIZE = sizeof(IMU_PORTS)/sizeof(*IMU_PORTS);
+Adafruit_BNO055 IMUS[SIZE] = { 
+  Adafruit_BNO055(55, BNO055_I2C_ADDR),
+  Adafruit_BNO055(54, BNO055_I2C_ADDR),
+  Adafruit_BNO055(53, BNO055_I2C_ADDR),
+  Adafruit_BNO055(52, BNO055_I2C_ADDR),
+  Adafruit_BNO055(51, BNO055_I2C_ADDR),
+  Adafruit_BNO055(50, BNO055_I2C_ADDR)
+};
 
 void tcaSelect(uint8_t i);
-void restartSensor(int i);
-bool checkSensorForZeros(imu::Quaternion quat);
-void printAllData(sensors_event_t event, imu::Quaternion quat, int i);
+bool restartSensor(int i);
+void printAllData(sensors_event_t &event, imu::Quaternion &quat, int i);
 
 void setup() {
   Serial.begin(115200);
   Wire.begin();
-  for (int i = 0; i < SIZE; i++){
+  Wire.setClock(400000); 
+
+  StaticJsonDocument<128> doc;
+  
+  for (int i = 0; i < SIZE; i++) {
     tcaSelect(IMU_PORTS[i]);
-    Serial.print("{")
-    Serial.print("\"imu\":"); Serial.print(i); Serial.print(",");
-    Serial.print("\"message\":"); Serial.print("\"Status: Initialize IMU on port: "); Serial.print(IMU_PORTS[i]); Serial.print("\"");
-    Serial.println("}");
-    IMUS[i] = new Adafruit_BNO055(55 - i, BNO055_I2C_ADDR);
-    restartSensor(i);
-    delay(420);
+    doc["i"] = i;
+    doc["m"] = String("S: Init: ") + String(IMU_PORTS[i]);
+    serializeJson(doc, Serial);
+    Serial.println();
+    
+    if (restartSensor(i)) {
+      delay(400);
+    }
   }
-  delay(420);
 }
 
 void loop() {
-  for (int i = 0; i < SIZE; i++){
+  sensors_event_t event;
+  imu::Quaternion quat;
+  StaticJsonDocument<256> doc;
+  
+  for (int i = 0; i < SIZE; i++) {
     tcaSelect(IMU_PORTS[i]);
-    sensors_event_t event;
-    IMUS[i]->getEvent(&event);
-    imu::Quaternion quat = IMUS[i]->getQuat();
-    if (checkSensorForZeros(quat)) {
-      Serial.print("{")
-      Serial.print("\"imu\":"); Serial.print(i); Serial.print(",");
-      Serial.print("\"message\":"); Serial.print("\"Error: Only Zeros\"");
-      Serial.println("}");
+    
+    IMUS[i].getEvent(&event);
+    quat = IMUS[i].getQuat();
+    
+    if (quat.w() == 0.0 && quat.x() == 0.0 && quat.y() == 0.0 && quat.z() == 0.0) {
+      doc["i"] = i;
+      doc["m"] = "E: 0s";
+      serializeJson(doc, Serial);
+      Serial.println();
       restartSensor(i);
+    } else {
+      printAllData(event, quat, i);
     }
-    else
-        printAllData(event, quat, i);
   }
-  delay(BNO055_SAMPLERATE_DELAY_MS);
+  
+  // Use non-blocking timing instead of delay
+  static unsigned long lastSample = 0;
+  unsigned long now = millis();
+  unsigned long elapsed = now - lastSample;
+  if (elapsed < BNO055_SAMPLERATE_DELAY_MS) {
+    delay(BNO055_SAMPLERATE_DELAY_MS - elapsed);
+  }
+  lastSample = millis();
 }
 
 void tcaSelect(uint8_t i) {
   if (i > 7) return;
+  
   Wire.beginTransmission(TCAADDR);
   Wire.write(1 << i);
   uint8_t result = Wire.endTransmission();
+  
   if (result != 0) {
-    Serial.print("{")
-    Serial.print("\"imu\":"); Serial.print(-1); Serial.print(",");
-    Serial.print("\"message\":"); Serial.print("\"Error: TCA9548A Error on channel\"");
-    Serial.println("}");
+    StaticJsonDocument<64> doc;
+    doc["i"] = -1;
+    doc["m"] = "E: WE";
+    serializeJson(doc, Serial);
+    Serial.println();
   }
 }
 
-void restartSensor(int i) {
-  if (!IMUS[i]->begin()) {
-    Serial.print("{")
-    Serial.print("\"imu\":"); Serial.print(i); Serial.print(",");
-    Serial.print("\"message\":"); Serial.print("\"Error: Sensor Not Found\"");
-    Serial.println("}");
-  } else {
-    IMUS[i]->setExtCrystalUse(true);
-    Serial.print("{")
-    Serial.print("\"imu\":"); Serial.print(i); Serial.print(",");
-    Serial.print("\"message\":"); Serial.print("\"Status: Sensor Success Restarted\"");
-    Serial.println("}");
-    delay(420);
-  }
-}
-
-bool checkSensorForZeros(imu::Quaternion quat) {
-  if (quat.w() == 0.0 && quat.x() == 0.0 && quat.y() == 0.0 && quat.z() == 0.0)
-    return true;
-  else 
+bool restartSensor(int i) {
+  if (!IMUS[i].begin()) {
+    StaticJsonDocument<64> doc;
+    doc["i"] = i;
+    doc["m"] = "E: NF";
+    serializeJson(doc, Serial);
+    Serial.println();
     return false;
+  } else {
+    IMUS[i].setExtCrystalUse(true);
+    return true;
+  }
 }
 
-void printAllData(sensors_event_t event, imu::Quaternion quat, int i) {
-  Serial.print("{");
+void printAllData(sensors_event_t &event, imu::Quaternion &quat, int i) {
+  StaticJsonDocument<256> doc;
+  JsonArray data = doc.createNestedArray("m");
   
-  Serial.print("\"imu\":"); Serial.print(i); Serial.print(",");
-
-  Serial.print("\"message\":"); Serial.print("\"Data: Success\""); Serial.print(",");
-
-  Serial.print("\"values\":[");
-  Serial.print(event.acceleration.x); Serial.print(",");
-  Serial.print(event.acceleration.y); Serial.print(",");
-  Serial.print(event.acceleration.z); Serial.print(",");
-  Serial.print(event.magnetic.x); Serial.print(",");
-  Serial.print(event.magnetic.y); Serial.print(",");
-  Serial.print(event.magnetic.z); Serial.print(",");
-  Serial.print(event.gyro.x); Serial.print(",");
-  Serial.print(event.gyro.y); Serial.print(",");
-  Serial.print(event.gyro.z); Serial.print(",");
-  Serial.print(quat.w()); Serial.print(",");
-  Serial.print(quat.x()); Serial.print(",");
-  Serial.print(quat.y()); Serial.print(",");
-  Serial.print(quat.z()); Serial.print(",");
-  Serial.print(event.temperature); Serial.print(",");
-  Serial.print(event.orientation.x); Serial.print(",");
-  Serial.print(event.orientation.y); Serial.print(",");
-  Serial.print(event.orientation.z); Serial.print("]");
+  doc["i"] = i;
   
-  Serial.println("}");
+  data.add(event.acceleration.x);
+  data.add(event.acceleration.y);
+  data.add(event.acceleration.z);
+  data.add(event.magnetic.x);
+  data.add(event.magnetic.y);
+  data.add(event.magnetic.z);
+  data.add(event.gyro.x);
+  data.add(event.gyro.y);
+  data.add(event.gyro.z);
+  data.add(quat.w());
+  data.add(quat.x());
+  data.add(quat.y());
+  data.add(quat.z());
+  
+  serializeJson(doc, Serial);
+  Serial.println();
 }
