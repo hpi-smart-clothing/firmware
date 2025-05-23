@@ -5,7 +5,7 @@
 #include <Adafruit_BNO055.h>
 #include <ArduinoJson.h>  
 
-#define BNO055_SAMPLERATE_DELAY_MS (500) 
+#define BNO055_SAMPLERATE_DELAY_MS (10) 
 #define BNO055_I2C_ADDR 0x29 
 #define TCAADDR 0x70
 
@@ -64,8 +64,12 @@ void loop() {
     } else {
       printAllData(event, quat, i);
     }
+
+    wait();
   }
-  
+}
+
+void wait() {
   static unsigned long lastSample = 0;
   unsigned long now = millis();
   unsigned long elapsed = now - lastSample;
