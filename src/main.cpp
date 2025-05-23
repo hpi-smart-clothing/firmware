@@ -5,7 +5,7 @@
 #include <Adafruit_BNO055.h>
 #include <ArduinoJson.h>  
 
-#define BNO055_SAMPLERATE_DELAY_MS (10) 
+#define BNO055_SAMPLERATE_DELAY_MS (99) 
 #define BNO055_I2C_ADDR 0x29 
 #define TCAADDR 0x70
 
@@ -19,6 +19,7 @@ Adafruit_BNO055 IMUS[SIZE] = {
   Adafruit_BNO055(51, BNO055_I2C_ADDR),
   Adafruit_BNO055(50, BNO055_I2C_ADDR)
 };
+static unsigned long lastSample = 0;
 
 void tcaSelect(uint8_t i);
 bool restartSensor(int i);
@@ -48,8 +49,9 @@ void loop() {
   sensors_event_t event;
   imu::Quaternion quat;
   StaticJsonDocument<256> doc;
-  
+
   for (int i = 0; i < SIZE; i++) {
+    if (i == 2) continue;
     tcaSelect(IMU_PORTS[i]);
     
     IMUS[i].getEvent(&event);
@@ -64,13 +66,12 @@ void loop() {
     } else {
       printAllData(event, quat, i);
     }
-
-    wait();
+    delay(2);
   }
+  wait();
 }
 
 void wait() {
-  static unsigned long lastSample = 0;
   unsigned long now = millis();
   unsigned long elapsed = now - lastSample;
   if (elapsed < BNO055_SAMPLERATE_DELAY_MS) {
@@ -81,7 +82,6 @@ void wait() {
 
 void tcaSelect(uint8_t i) {
   if (i > 7) return;
-  
   Wire.beginTransmission(TCAADDR);
   Wire.write(1 << i);
   uint8_t result = Wire.endTransmission();
