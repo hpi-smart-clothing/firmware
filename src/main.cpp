@@ -5,7 +5,7 @@
 #include <Adafruit_BNO055.h>
 #include <ArduinoJson.h>  
 
-#define BNO055_SAMPLERATE_DELAY_MS (500) 
+#define BNO055_SAMPLERATE_DELAY_MS (99) 
 #define BNO055_I2C_ADDR 0x29 
 #define TCAADDR 0x70
 
@@ -54,7 +54,7 @@ void loop() {
   for (int i = 0; i < SIZE; i++) {
     if (i == 2) continue;
     tcaSelect(IMU_PORTS[i]);
-    delay(75);  
+    delay(10);  
     
     IMUS[i].getEvent(&event);
     quat = IMUS[i].getQuat();
