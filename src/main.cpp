@@ -5,7 +5,7 @@
 #include <Adafruit_BNO055.h>
 #include <ArduinoJson.h>  
 
-#define BNO055_SAMPLERATE_DELAY_MS (99) 
+#define BNO055_SAMPLERATE_DELAY_MS (500) 
 #define BNO055_I2C_ADDR 0x29 
 #define TCAADDR 0x70
 
@@ -26,22 +26,23 @@ bool restartSensor(int i);
 void printAllData(sensors_event_t &event, imu::Quaternion &quat, int i);
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   Wire.begin();
-  //Wire.setClock(400000); 
 
   StaticJsonDocument<128> doc;
   
   for (int i = 0; i < SIZE; i++) {
     tcaSelect(IMU_PORTS[i]);
+    Wire.requestFrom(0x29, 1);
+    if (Wire.available()==0) {
+      Serial.printf("no device at 0x29 on chan %u\n", IMU_PORTS[i]);
+    }
     doc["i"] = i;
     doc["m"] = String("S: Init: ") + String(IMU_PORTS[i]);
     serializeJson(doc, Serial);
     Serial.println();
     
-    if (restartSensor(i)) {
-      delay(400);
-    }
+    restartSensor(i, true);
   }
 }
 
@@ -53,19 +54,15 @@ void loop() {
   for (int i = 0; i < SIZE; i++) {
     if (i == 2) continue;
     tcaSelect(IMU_PORTS[i]);
+    delay(75);  
     
     IMUS[i].getEvent(&event);
     quat = IMUS[i].getQuat();
     
     if (quat.w() == 0.0 && quat.x() == 0.0 && quat.y() == 0.0 && quat.z() == 0.0) {
-      doc["i"] = i;
-      doc["m"] = "E: 0s";
-      serializeJson(doc, Serial);
-      Serial.println();
-      restartSensor(i);
-    } else {
-      printAllData(event, quat, i);
-    }
+      restartSensor(i, false);
+    } 
+    printAllData(event, quat, i);
     delay(2);
   }
   wait();
@@ -85,36 +82,24 @@ void tcaSelect(uint8_t i) {
   Wire.beginTransmission(TCAADDR);
   Wire.write(1 << i);
   uint8_t result = Wire.endTransmission();
-  
-  if (result != 0) {
-    StaticJsonDocument<64> doc;
-    doc["i"] = -1;
-    doc["m"] = "E: WE";
-    serializeJson(doc, Serial);
-    Serial.println();
-  }
 }
 
-bool restartSensor(int i) {
-  if (!IMUS[i].begin()) {
-    StaticJsonDocument<64> doc;
-    doc["i"] = i;
-    doc["m"] = "E: NF";
-    serializeJson(doc, Serial);
-    Serial.println();
-    return false;
-  } else {
+bool restartSensor(int i, bool delayed) {
+  if (IMUS[i].begin()) {
+    delay(100);
+    IMUS[i].setMode(OPERATION_MODE_NDOF);
+    delay(100);
     IMUS[i].setExtCrystalUse(true);
+    delay(100);
     return true;
   }
+  return false;
 }
 
 void printAllData(sensors_event_t &event, imu::Quaternion &quat, int i) {
   StaticJsonDocument<256> doc;
   JsonArray data = doc.createNestedArray("m");
-  
   doc["i"] = i;
-  
   data.add(event.acceleration.x);
   data.add(event.acceleration.y);
   data.add(event.acceleration.z);
@@ -128,7 +113,6 @@ void printAllData(sensors_event_t &event, imu::Quaternion &quat, int i) {
   data.add(quat.x());
   data.add(quat.y());
   data.add(quat.z());
-  
   serializeJson(doc, Serial);
   Serial.println();
 }
