@@ -103,8 +103,10 @@ bool restartSensor(int i)
     delay(100);
     IMUS[i].setExtCrystalUse(true);
     delay(100);
+    delay(100);
     return true;
   }
+  return false;
   return false;
 }
 
