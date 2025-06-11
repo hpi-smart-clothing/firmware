@@ -28,7 +28,7 @@ void wait();
 void setup()
 {
   Serial.begin(9600);
-  Wire.begin();
+  Wire.begin(8, 20);
 
   StaticJsonDocument<128> doc;
 
