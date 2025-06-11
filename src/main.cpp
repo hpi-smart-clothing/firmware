@@ -123,6 +123,18 @@ void printAllData(imu::Quaternion &quat, int i)
   data.add(acc.y());
   data.add(acc.z());
 
+  // Linear Acceleration (m/s^2)
+  imu::Vector<3> lin = current_imu.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
+  data.add(lin.x());
+  data.add(lin.y());
+  data.add(lin.z());   
+
+  // Gravity (m/s^2)
+  imu::Vector<3> grav = current_imu.getVector(Adafruit_BNO055::VECTOR_GRAVITY);
+  data.add(grav.x());
+  data.add(grav.y());
+  data.add(grav.z()); 
+
   // Magnetometer (uT)
   imu::Vector<3> mag = current_imu.getVector(Adafruit_BNO055::VECTOR_MAGNETOMETER);
   data.add(mag.x());
@@ -133,7 +145,7 @@ void printAllData(imu::Quaternion &quat, int i)
   imu::Vector<3> gyro = current_imu.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
   data.add(gyro.x());
   data.add(gyro.y());
-  data.add(gyro.z());
+  data.add(gyro.z()); 
 
   data.add(quat.w());
   data.add(quat.x());
