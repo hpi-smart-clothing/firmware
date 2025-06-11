@@ -141,4 +141,5 @@ void printAllData(imu::Quaternion &quat, int i)
   data.add(quat.z());
 
   serializeJson(doc, Serial);
+  Serial.println()
 }
