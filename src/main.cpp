@@ -112,45 +112,53 @@ bool restartSensor(int i)
 
 void printAllData(imu::Quaternion &quat, int i)
 {
-  StaticJsonDocument<256> doc;
-  JsonArray data = doc.createNestedArray("m");
+  StaticJsonDocument<512> doc;  // Increased size for nested structure
   doc["i"] = i;
-  Adafruit_BNO055& current_imu = IMUS[i];
+
+  JsonObject m = doc.createNestedObject("m");
+  Adafruit_BNO055 &current_imu = IMUS[i];
 
   // Accelerometer (m/s^2)
   imu::Vector<3> acc = current_imu.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
-  data.add(acc.x());
-  data.add(acc.y());
-  data.add(acc.z());
+  JsonArray accArr = m.createNestedArray("acc");
+  accArr.add(acc.x());
+  accArr.add(acc.y());
+  accArr.add(acc.z());
 
   // Linear Acceleration (m/s^2)
   imu::Vector<3> lin = current_imu.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
-  data.add(lin.x());
-  data.add(lin.y());
-  data.add(lin.z());   
+  JsonArray linArr = m.createNestedArray("lin");
+  linArr.add(lin.x());
+  linArr.add(lin.y());
+  linArr.add(lin.z());
 
   // Gravity (m/s^2)
   imu::Vector<3> grav = current_imu.getVector(Adafruit_BNO055::VECTOR_GRAVITY);
-  data.add(grav.x());
-  data.add(grav.y());
-  data.add(grav.z()); 
+  JsonArray gravArr = m.createNestedArray("grav");
+  gravArr.add(grav.x());
+  gravArr.add(grav.y());
+  gravArr.add(grav.z());
 
   // Magnetometer (uT)
   imu::Vector<3> mag = current_imu.getVector(Adafruit_BNO055::VECTOR_MAGNETOMETER);
-  data.add(mag.x());
-  data.add(mag.y());
-  data.add(mag.z());
+  JsonArray magArr = m.createNestedArray("mag");
+  magArr.add(mag.x());
+  magArr.add(mag.y());
+  magArr.add(mag.z());
 
   // Gyroscope (rad/s)
   imu::Vector<3> gyro = current_imu.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
-  data.add(gyro.x());
-  data.add(gyro.y());
-  data.add(gyro.z()); 
+  JsonArray gyroArr = m.createNestedArray("gyro");
+  gyroArr.add(gyro.x());
+  gyroArr.add(gyro.y());
+  gyroArr.add(gyro.z());
 
-  data.add(quat.w());
-  data.add(quat.x());
-  data.add(quat.y());
-  data.add(quat.z());
+  // Quaternion
+  JsonArray quatArr = m.createNestedArray("quat");
+  quatArr.add(quat.w());
+  quatArr.add(quat.x());
+  quatArr.add(quat.y());
+  quatArr.add(quat.z());
 
   serializeJson(doc, Serial);
   Serial.println();
