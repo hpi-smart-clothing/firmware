@@ -46,12 +46,14 @@ bool startIMUs()
     // Initialize all IMUs
     for (int i = 0; i < NUMBER_IMUS; i++)
     {
-        if (!restartIMU(i))
-        {
-            Serial.println("Status: Error: Sensor " + String(i) + " didn't connect");
-            return false;
+        if(i != 2)  {
+            if (!restartIMU(i))
+            {
+                Serial.println("Status: Error: Sensor " + String(i) + " didn't connect");
+                return false;
+            }
+            delay(IMU_INIT_DELAY);
         }
-        delay(IMU_INIT_DELAY);
     }
     return true;
 }
@@ -234,13 +236,15 @@ bool loadData(uint8_t pQuatData[NUMBER_IMUS][8])
     // Loads Quaternion from each IMU into the 2d Array
     for (int i = 0; i < NUMBER_IMUS; i++)
     {
-        selectIMU(i);
-        delay(10);
-        if (!readIMUData(pQuatData[i]))
-        {
-            Serial.println("Status: Error: " + String(i) + (": Quaternions contains only zeros"));
-            restartIMU(i);
-            return false;
+        if(i != 2)  {
+            selectIMU(i);
+            delay(10);
+            if (!readIMUData(pQuatData[i]))
+            {
+                Serial.println("Status: Error: " + String(i) + (": Quaternions contains only zeros"));
+                restartIMU(i);
+                return false;
+            }
         }
     }
     return true;

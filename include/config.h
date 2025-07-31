@@ -1,8 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define SDA_PIN D4
-#define SCL_PIN D5
+#define SDA_PIN D8
+#define SCL_PIN D7
 #define IMU_SPI_ADDRESS 0x29 // I2C address of the BNO055 sensor
 #define TCA_ADDRESS 0x70 // Address of MUX
 #define IMU_QUAT_DATA_ADDRESS 0x20
@@ -23,7 +23,7 @@
 #define MOTOR_LEFT_PIN D0
 #define MOTOR_RIGHT_PIN D1
 #define MOTOR_LEFT_LEDC_CHANNEL 0
-#define MOTOR_RIGHT_LEDC_CHANNEL 0
+#define MOTOR_RIGHT_LEDC_CHANNEL 1
 #define MOTOR_PWM_FREQUENCY 5000 
 
 #define BLE_DEVICE_NAME "BackUp"
