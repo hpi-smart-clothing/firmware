@@ -5,7 +5,7 @@
 #include <Adafruit_BNO055.h>
 #include <ArduinoJson.h>
 
-#define BNO055_SAMPLERATE_DELAY_MS (99)
+#define BNO055_SAMPLERATE_DELAY_MS (0) 
 #define BNO055_I2C_ADDR 0x29
 #define TCAADDR 0x70
 
@@ -20,14 +20,17 @@ Adafruit_BNO055 IMUS[SIZE] = {
     Adafruit_BNO055(50, BNO055_I2C_ADDR)};
 static unsigned long lastSample = 0;
 
+// Neuer globaler Zähler
+unsigned long packetCounter = 0;
+
 void tcaSelect(uint8_t i);
 bool restartSensor(int i);
-void printAllData(imu::Quaternion &quat, int i);
+void printAllData(imu::Quaternion &quat, int i, unsigned long n); // n als Parameter
 void wait();
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Wire.begin(8, 20);
 
   StaticJsonDocument<128> doc;
@@ -54,12 +57,12 @@ void loop()
   sensors_event_t event;
   imu::Quaternion quat;
   StaticJsonDocument<256> doc;
+
   for (int i = 0; i < SIZE; i++)
   {
     if (i == 2)
       continue;
     tcaSelect(IMU_PORTS[i]);
-    delay(10);
 
     IMUS[i].getEvent(&event);
     quat = IMUS[i].getQuat();
@@ -68,8 +71,12 @@ void loop()
     {
       restartSensor(i);
     }
-    printAllData(quat, i);
-    delay(2);
+    printAllData(quat, i, packetCounter); // n übergeben
+  }
+
+  packetCounter++;
+  if (packetCounter >= 100000) {
+    ESP.restart(); // ESP32/ESP8266: Neustart, ggf. anpassen für andere Plattformen
   }
   wait();
 }
@@ -107,14 +114,15 @@ bool restartSensor(int i)
     return true;
   }
   return false;
-  return false;
 }
 
-void printAllData(imu::Quaternion &quat, int i)
+void printAllData(imu::Quaternion &quat, int i, unsigned long n)
 {
   StaticJsonDocument<256> doc;
   JsonArray data = doc.createNestedArray("m");
   doc["i"] = i;
+  doc["t"] = millis();
+  doc["n"] = n; // Paketnummer ergänzen
   Adafruit_BNO055& current_imu = IMUS[i];
 
   // Accelerometer (m/s^2)
